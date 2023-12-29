@@ -17,32 +17,63 @@ namespace Business.Concretes
 {
     public class CategoryManager : ICategoryService
     {
-        private ICategoryDal _categoryDal;
+        ICategoryDal _categoryDal;
         IMapper _mapper;
-        CategoryBusinessRules _categoryBusinessRules;
+        CategoryBusinessRules _businessRules;
 
-        public CategoryManager(ICategoryDal categoryDal, IMapper mapper, CategoryBusinessRules categoryBusinessRules)
+        public CategoryManager(CategoryBusinessRules businessRules, ICategoryDal categoryDal, IMapper mapper)
         {
+            _businessRules = businessRules;
             _categoryDal = categoryDal;
             _mapper = mapper;
-            _categoryBusinessRules = categoryBusinessRules;
-        }
-
-        public async Task<IPaginate<GetListCategoryResponse>> GetListAsync(PageRequest pageRequest)
-        {
-            var categoryList = await _categoryDal.GetListAsync();
-            var mappedList = _mapper.Map<Paginate<GetListCategoryResponse>>(categoryList);
-            return mappedList;
         }
 
         public async Task<CreatedCategoryResponse> Add(CreateCategoryRequest createCategoryRequest)
         {
-            await _categoryBusinessRules.MaximumCategoryCountIsTen();
             Category category = _mapper.Map<Category>(createCategoryRequest);
-            var createdCategory = await _categoryDal.AddAsync(category);
-            CreatedCategoryResponse result = _mapper.Map<CreatedCategoryResponse>(createdCategory);
+            Category createdCategory = await _categoryDal.AddAsync(category);
+            CreatedCategoryResponse createdCategoryResponse = _mapper.Map<CreatedCategoryResponse>(createdCategory);
+            return createdCategoryResponse;
+        }
+
+        public async Task<DeletedCategoryResponse> Delete(DeleteCategoryRequest deleteCategoryRequest)
+        {
+            var data = await _categoryDal.GetAsync(i => i.Id == deleteCategoryRequest.Id);
+            _mapper.Map(deleteCategoryRequest, data);
+            data.DeletedDate = DateTime.Now;
+            var result = await _categoryDal.DeleteAsync(data);
+            var result2 = _mapper.Map<DeletedCategoryResponse>(result);
+            return result2;
+        }
+
+        public async Task<CreatedCategoryResponse> GetById(int id)
+        {
+            var result = await _categoryDal.GetAsync(c => c.Id == id);
+            Category mappedCategory = _mapper.Map<Category>(result);
+            CreatedCategoryResponse createdCategoryResponse = _mapper.Map<CreatedCategoryResponse>(mappedCategory);
+            return createdCategoryResponse;
+        }
+
+
+        public async Task<IPaginate<GetListCategoryResponse>> GetListAsync(PageRequest pageRequest)
+        {
+            var data = await _categoryDal.GetListAsync(
+                index: pageRequest.PageIndex,
+                size: pageRequest.PageSize
+            );
+            var result = _mapper.Map<Paginate<GetListCategoryResponse>>(data);
             return result;
         }
 
+
+        public async Task<UpdatedCategoryResponse> Update(UpdateCategoryRequest updateCategoryRequest)
+        {
+            var data = await _categoryDal.GetAsync(i => i.Id == updateCategoryRequest.Id);
+            _mapper.Map(updateCategoryRequest, data);
+            data.UpdatedDate = DateTime.Now;
+            await _categoryDal.UpdateAsync(data);
+            var result = _mapper.Map<UpdatedCategoryResponse>(data);
+            return result;
+        }
     }
 }

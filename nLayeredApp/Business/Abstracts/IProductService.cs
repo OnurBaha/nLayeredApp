@@ -15,6 +15,9 @@ namespace Business.Abstracts
     {
         Task<IPaginate<GetListProductResponse>> GetListAsync(PageRequest pageRequest);
         Task<CreatedProductResponse> Add(CreateProductRequest createProductRequest);
+        Task<DeletedProductResponse> Delete(DeleteProductRequest deleteProductRequest);
+        Task<UpdatedProductResponse> Update(UpdateProductRequest updateProductRequest);
+        Task<CreatedProductResponse> GetById(int id);
 
     }
 }
